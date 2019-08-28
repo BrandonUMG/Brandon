@@ -1,0 +1,2609 @@
+#include <SPI.h>
+#include <Wire.h>
+#include <Keypad.h> 
+#include <Servo.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+#define OLED_RESET 4
+Adafruit_SSD1306 display(OLED_RESET);
+#define NUMFLAKES 10
+#define XPOS 0
+#define YPOS 1
+#define DELTAY 2
+
+
+#define LOGO16_GLCD_HEIGHT 64 
+#define LOGO16_GLCD_WIDTH  128 
+static const unsigned char PROGMEM logo16_glcd_bmp[] =
+{ B00000000, B11000000,
+  B00000001, B11000000,
+  B00000001, B11000000,
+  B00000011, B11100000,
+  B11110011, B11100000,
+  B11111110, B11111000,
+  B01111110, B11111111,
+  B00110011, B10011111,
+  B00011111, B11111100,
+  B00001101, B01110000,
+  B00011011, B10100000,
+  B00111111, B11100000,
+  B00111111, B11110000,
+  B01111100, B11110000,
+  B01110000, B01110000,
+  B00000000, B00110000 };
+
+#define SSD1306_LCDHEIGHT 64
+#if (SSD1306_LCDHEIGHT != 64)
+#error("Height incorrect, please fix Adafruit_SSD1306.h!");
+#endif
+
+const int Motor1=54;
+const int Motor2=55;
+const byte FILAS = 4;     // define numero de filas
+const byte COLUMNAS = 4;    // define numero de columnas
+char keys[FILAS][COLUMNAS] = {    // define la distribucion de teclas
+  {'1','2','3','A'},
+  {'4','5','6','B'},
+  {'7','8','9','C'},
+  {'*','0','#','D'}
+};
+
+byte pinesFilas[FILAS] = {9,8,7,6};   // pines correspondientes a las filas
+byte pinesColumnas[COLUMNAS] = {5,4,3,2}; // pines correspondientes a las columnas
+
+Keypad teclado = Keypad(makeKeymap(keys), pinesFilas, pinesColumnas, FILAS, COLUMNAS);  // crea objeto
+Servo servo;
+
+char TECLA;       
+char CLAVE[4];           
+byte INDICE = 0;      
+long NUM;
+long TOTAL;
+long N1=0,N2=0,N3=0,N4=0,N5=0,N6=0,N7=0,N8=0,N9=0,N10=0,NX=0;
+int pos=0;
+int digPin = 0;
+
+void setup()   {    
+  pinMode(Motor1,OUTPUT);
+  pinMode(Motor2,OUTPUT); 
+  Serial.begin(9600);
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  
+servo.attach(10);
+servo.detach();
+  delay(1000);
+  display.clearDisplay();
+}
+
+void loop() {
+  if ((N8==0)&&(N9==0))
+  {
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL");  
+  TECLA = teclado.getKey();  
+  if (TECLA)        
+  { 
+    CLAVE[INDICE] = TECLA;   
+    INDICE++;       
+    TOTAL++;
+    NUM = atof(CLAVE);
+    Serial.print(TECLA);
+    if((TOTAL==2)&&(N10==0))
+     {
+      NX=NUM; 
+      if ((NX>=6)||(NX==0))
+        {
+         TOTAL=1;
+        }
+     }
+    if ((N6==2)&&(NUM>NX))
+    {
+    if ((NUM==1))
+     {
+      N1=1; 
+      display.setCursor(2,10);
+      display.println(N1);
+     }
+     if ((NUM==2))
+     {
+      N2=2; 
+      display.setCursor(20,10);
+      display.println(N2);
+     }
+     if ((NUM==3))
+     {
+      N3=3; 
+      display.setCursor(40,10);
+      display.println(N3);
+     }
+     if ((NUM==4))
+     {
+      N4=4; 
+      display.setCursor(60,10);
+      display.println(N4);
+     }
+     if ((NUM==5))
+     {
+      N5=5; 
+      display.setCursor(80,10);
+      display.println(N5);
+     }
+     }
+     if ((N7==2)&&(NUM<NX))
+    {
+    if ((NUM==1))
+     {
+      N1=1; 
+      display.setCursor(2,10);
+      display.println(N1);
+     }
+     if ((NUM==2))
+     {
+      N2=2; 
+      display.setCursor(20,10);
+      display.println(N2);
+     }
+     if ((NUM==3))
+     {
+      N3=3; 
+      display.setCursor(40,10);
+      display.println(N3);
+     }
+     if ((NUM==4))
+     {
+      N4=4; 
+      display.setCursor(60,10);
+      display.println(N4);
+     }
+     if ((NUM==5))
+     {
+      N5=5; 
+      display.setCursor(80,10);
+      display.println(N5);
+     }
+     }
+     if ((NUM==6)&&(N6==0))
+     {
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL");
+  display.setCursor(50,1);
+  display.println("SUBE");
+  display.display();
+  N7=1;    
+  N6=2;
+     }
+     if ((NUM==7)&&(N7==0))
+     {
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL");
+  display.setCursor(50,1);
+  display.println("BAJA");
+  display.display();
+  N6=1;
+  N7=2;
+     }
+      if ((INDICE<=1)&&(TOTAL>=2))
+      {
+      display.setCursor(40,1);
+      display.println(NX);
+      display.display();
+      INDICE=0;
+      }
+  ////CIERRE DE PUERTAS  
+          if ((NUM==8)&&(N8==0))
+         {
+              display.clearDisplay();
+              display.setTextSize(1);
+              display.setTextColor(WHITE);
+              display.setCursor(2,1);
+              display.println("PUERTAS CERRANDO");
+              display.display();
+              Cerrar();
+              N8=1;
+              N9=0;
+                            for (int i = 0; i<=20; i++) 
+                            {
+                            TECLA = teclado.getKey();  
+                              if (TECLA)        
+                              {
+                              CLAVE[INDICE] = TECLA;   
+                              } 
+                                NUM = atof(CLAVE);
+                                if (NUM!=9)
+                                  {
+                                  delay(100); 
+                                  }
+                                  if ((NUM==9)&&(N9==0))
+                                      {
+                                      display.clearDisplay();
+                                      display.setTextSize(1);
+                                      display.setTextColor(WHITE);
+                                      display.setCursor(2,1);
+                                      display.println("PUERTAS ABIERTA");
+                                      display.display();
+                                      Abrir();
+                                      N9=0;
+                                      N8=0;
+                                      i=20;
+                                      }
+                            }
+         }
+    if(N8==0)
+    {
+      display.display();
+      INDICE=0;
+    }
+  }
+  }
+if((N8==1)&&(N9==0))
+  {
+                                      display.clearDisplay();
+                                      display.setTextSize(1);
+                                      display.setTextColor(WHITE);
+                                      display.setCursor(2,1);
+                                      display.println("ELEVADOR EN");
+                                      display.setCursor(2,10);
+                                      display.println("MOVIMIENTO");
+                                      display.display();
+///////////////////SE QUIERE BAJAR EN NIVEL 1///////////////
+if((NX==1)&&(N2==0)&&(N3==0)&&(N4==0)&&(N5==0))
+  {
+    N1=0;
+    N2=0;
+    N3=0;
+    N4=0;
+    N5=0;
+    N6=0;
+    N7=0;
+    N8=0;
+    N9=0;
+    N10=1;
+    NX=1;
+    NUM=0;
+    TOTAL=1;
+    INDICE=0;
+    for (int i = 0; i<=2; i++)
+    {
+    CLAVE[i]=0;
+    }
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 1");
+  display.display();
+}
+//////////////////////SE QUIERE SUBIR EN NIVEL 5/////////////////
+if((N1==0)&&(N2==0)&&(N3==0)&&(N4==0)&&(NX==5))
+  {
+    N1=0;
+    N2=0;
+    N3=0;
+    N4=0;
+    N5=0;
+    N6=0;
+    N7=0;
+    N8=0;
+    N9=0;
+    N10=1;
+    NX=5;
+    NUM=0;
+    TOTAL=1;
+    INDICE=0;
+    for (int i = 0; i<=2; i++)
+    {
+    CLAVE[i]=0;
+    }
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 5");
+  display.display();
+}
+/////////////////////////NIVEL 5 BAJAR////////////////////
+if((N1==1)&&(N2==0)&&(N3==0)&&(N4==0)&&(NX==5))
+  {
+    N1=0;
+    N2=0;
+    N3=0;
+    N4=0;
+    N5=0;
+    N6=0;
+    N7=0;
+    N8=0;
+    N9=0;
+    N10=1;
+    NX=1;
+    NUM=0;
+    TOTAL=1;
+    INDICE=0;
+    for (int i = 0; i<=2; i++)
+    {
+    CLAVE[i]=0;
+    }
+  Bajar();
+  delay(100);
+  Bajar();
+  delay(100);
+  Bajar();
+  delay(100);
+  Bajar();
+  delay(100);         
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 1");
+  display.display();
+  Abrir();
+}             
+            if((N1==0)&&(N2==2)&&(N3==0)&&(N4==0)&&(NX==5))
+            {
+            N1=0;
+            N2=0;
+            N3=0;
+            N4=0;
+            N5=0;
+            N6=0;
+            N7=0;
+            N8=0;
+            N9=0;
+            N10=1;
+            NX=2;
+            NUM=0;
+            TOTAL=1;
+            INDICE=0;
+              for (int i = 0; i<=2; i++)
+              {
+                CLAVE[i]=0;
+              }
+  Bajar();
+  delay(100);
+  Bajar();
+  delay(100);
+  Bajar();
+  delay(100);             
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 2");
+  display.display();
+  Abrir();
+              }
+if((N1==0)&&(N2==0)&&(N3==3)&&(N4==0)&&(NX==5))
+  {
+    N1=0;
+    N2=0;
+    N3=0;
+    N4=0;
+    N5=0;
+    N6=0;
+    N7=0;
+    N8=0;
+    N9=0;
+    N10=1;
+    NX=3;
+    NUM=0;
+    TOTAL=1;
+    INDICE=0;
+    for (int i = 0; i<=2; i++)
+    {
+    CLAVE[i]=0;
+    }
+  Bajar();
+  delay(100);
+  Bajar();
+  delay(100);             
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 3");
+  display.display();
+  Abrir();
+}             
+            if((N1==0)&&(N2==0)&&(N3==0)&&(N4==4)&&(NX==5))
+            {
+            N1=0;
+            N2=0;
+            N3=0;
+            N4=0;
+            N5=0;
+            N6=0;
+            N7=0;
+            N8=0;
+            N9=0;
+            N10=1;
+            NX=4;
+            NUM=0;
+            TOTAL=1;
+            INDICE=0;
+              for (int i = 0; i<=2; i++)
+              {
+                CLAVE[i]=0;
+              }
+  Bajar();
+  delay(100);            
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 4");
+  display.display();
+  Abrir();
+              }
+//////////////////////NIVEL4 BAJAR///////////////////////////////
+if((N1==1)&&(N2==0)&&(N3==0)&&(NX==4)&&(N5==0))
+  {
+    N1=0;
+    N2=0;
+    N3=0;
+    N4=0;
+    N5=0;
+    N6=0;
+    N7=0;
+    N8=0;
+    N9=0;
+    N10=1;
+    NX=1;
+    NUM=0;
+    TOTAL=1;
+    INDICE=0;
+    for (int i = 0; i<=2; i++)
+    {
+    CLAVE[i]=0;
+    }
+  Bajar();
+  delay(100);
+  Bajar();
+  delay(100);            
+  Bajar();
+  delay(100);
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 1");
+  display.display();
+  Abrir();
+}             
+            if((N1==0)&&(N2==2)&&(N3==0)&&(NX==4)&&(N5==0))
+            {
+            N1=0;
+            N2=0;
+            N3=0;
+            N4=0;
+            N5=0;
+            N6=0;
+            N7=0;
+            N8=0;
+            N9=0;
+            N10=1;
+            NX=2;
+            NUM=0;
+            TOTAL=1;
+            INDICE=0;
+              for (int i = 0; i<=2; i++)
+              {
+                CLAVE[i]=0;
+              }
+  Bajar();
+  delay(100);
+  Bajar();
+  delay(100);             
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 2");
+  display.display();
+  Abrir();
+              }
+if((N1==0)&&(N2==0)&&(N3==3)&&(NX==4)&&(N5==0))
+  {
+    N1=0;
+    N2=0;
+    N3=0;
+    N4=0;
+    N5=0;
+    N6=0;
+    N7=0;
+    N8=0;
+    N9=0;
+    N10=1;
+    NX=3;
+    NUM=0;
+    TOTAL=1;
+    INDICE=0;
+    for (int i = 0; i<=2; i++)
+    {
+    CLAVE[i]=0;
+    }
+  Bajar();
+  delay(100);             
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 3");
+  display.display();
+  Abrir();
+}             
+////////////////////////////NIVEL3 ABAJO/////////////
+            if((N1==1)&&(N2==0)&&(NX==3)&&(N4==0)&&(N5==0))
+            {
+            N1=0;
+            N2=0;
+            N3=0;
+            N4=0;
+            N5=0;
+            N6=0;
+            N7=0;
+            N8=0;
+            N9=0;
+            N10=1;
+            NX=1;
+            NUM=0;
+            TOTAL=1;
+            INDICE=0;
+              for (int i = 0; i<=2; i++)
+              {
+                CLAVE[i]=0;
+              }
+  Bajar();
+  delay(100);
+  Bajar();
+  delay(100);             
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 1");
+  display.display();
+  Abrir();
+              }
+if((N1==0)&&(N2==2)&&(NX==3)&&(N4==0)&&(N5==0))
+  {
+    N1=0;
+    N2=0;
+    N3=0;
+    N4=0;
+    N5=0;
+    N6=0;
+    N7=0;
+    N8=0;
+    N9=0;
+    N10=1;
+    NX=2;
+    NUM=0;
+    TOTAL=1;
+    INDICE=0;
+    for (int i = 0; i<=2; i++)
+    {
+    CLAVE[i]=0;
+    }
+  Bajar();
+  delay(100);       
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 2");
+  display.display();
+  Abrir();
+}             
+///////////////////////NIVEL 2 ABAJO//////////////////////
+            if((N1==1)&&(NX==2)&&(N3==0)&&(N4==0)&&(N5==0))
+            {
+            N1=0;
+            N2=0;
+            N3=0;
+            N4=0;
+            N5=0;
+            N6=0;
+            N7=0;
+            N8=0;
+            N9=0;
+            N10=1;
+            NX=1;
+            NUM=0;
+            TOTAL=1;
+            INDICE=0;
+              for (int i = 0; i<=2; i++)
+              {
+                CLAVE[i]=0;
+              }
+  Bajar();
+  delay(100);             
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 1");
+  display.display();
+  Abrir();
+              }
+///////////////////NIVEL 1 SUBE//////////////
+if((NX==1)&&(N2==0)&&(N3==0)&&(N4==0)&&(N5==5))
+  {
+    N1=0;
+    N2=0;
+    N3=0;
+    N4=0;
+    N5=0;
+    N6=0;
+    N7=0;
+    N8=0;
+    N9=0;
+    N10=1;
+    NX=5;
+    NUM=0;
+    TOTAL=1;
+    INDICE=0;
+    for (int i = 0; i<=2; i++)
+    {
+    CLAVE[i]=0;
+    }
+Arriba();
+delay(100);             
+Arriba();
+delay(100);
+Arriba();
+delay(100);
+Arriba();
+delay(100);
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 5");
+  display.display();
+Abrir();
+}             
+            if((NX==1)&&(N2==0)&&(N3==0)&&(N4==4)&&(N5==0))
+            {
+            N1=0;
+            N2=0;
+            N3=0;
+            N4=0;
+            N5=0;
+            N6=0;
+            N7=0;
+            N8=0;
+            N9=0;
+            N10=1;
+            NX=4;
+            NUM=0;
+            TOTAL=1;
+            INDICE=0;
+              for (int i = 0; i<=2; i++)
+              {
+                CLAVE[i]=0;
+              }
+Arriba();
+delay(100);
+Arriba();
+delay(100);
+Arriba();
+delay(100);           
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 4");
+  display.display();
+  Abrir();
+              }
+if((NX==1)&&(N2==0)&&(N3==3)&&(N4==0)&&(N5==0))
+  {
+    N1=0;
+    N2=0;
+    N3=0;
+    N4=0;
+    N5=0;
+    N6=0;
+    N7=0;
+    N8=0;
+    N9=0;
+    N10=1;
+    NX=3;
+    NUM=0;
+    TOTAL=1;
+    INDICE=0;
+    for (int i = 0; i<=2; i++)
+    {
+    CLAVE[i]=0;
+    }
+Arriba();
+delay(100);
+Arriba();
+delay(100);            
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 3");
+  display.display();
+  Abrir();
+}             
+            if((NX==1)&&(N2==2)&&(N3==0)&&(N4==0)&&(N5==0))
+            {
+            N1=0;
+            N2=0;
+            N3=0;
+            N4=0;
+            N5=0;
+            N6=0;
+            N7=0;
+            N8=0;
+            N9=0;
+            N10=1;
+            NX=2;
+            NUM=0;
+            TOTAL=1;
+            INDICE=0;
+              for (int i = 0; i<=2; i++)
+              {
+                CLAVE[i]=0;
+              }
+Arriba();
+delay(100);
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 2");
+  display.display();
+  Abrir();
+              }
+///////////////////NIVEL 2 SUBE//////////
+if((N1==0)&&(NX==2)&&(N3==0)&&(N4==0)&&(N5==5))
+  {
+    N1=0;
+    N2=0;
+    N3=0;
+    N4=0;
+    N5=0;
+    N6=0;
+    N7=0;
+    N8=0;
+    N9=0;
+    N10=1;
+    NX=5;
+    NUM=0;
+    TOTAL=1;
+    INDICE=0;
+    for (int i = 0; i<=2; i++)
+    {
+    CLAVE[i]=0;
+    }
+Arriba();
+delay(100); 
+Arriba();
+delay(100);
+Arriba();
+delay(100);           
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 5");
+  display.display();
+  Abrir();
+}             
+            if((N1==0)&&(NX==2)&&(N3==0)&&(N4==4)&&(N5==0))
+            {
+            N1=0;
+            N2=0;
+            N3=0;
+            N4=0;
+            N5=0;
+            N6=0;
+            N7=0;
+            N8=0;
+            N9=0;
+            N10=1;
+            NX=4;
+            NUM=0;
+            TOTAL=1;
+            INDICE=0;
+              for (int i = 0; i<=2; i++)
+              {
+                CLAVE[i]=0;
+              }
+Arriba();
+delay(100);
+Arriba();
+delay(100);
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 4");
+  display.display();
+  Abrir();
+              }
+if((N1==0)&&(NX==2)&&(N3==3)&&(N4==0)&&(N5==0))
+  {
+    N1=0;
+    N2=0;
+    N3=0;
+    N4=0;
+    N5=0;
+    N6=0;
+    N7=0;
+    N8=0;
+    N9=0;
+    N10=1;
+    NX=3;
+    NUM=0;
+    TOTAL=1;
+    INDICE=0;
+    for (int i = 0; i<=2; i++)
+    {
+    CLAVE[i]=0;
+    }
+Arriba();
+delay(100);           
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 3");
+  display.display();
+  Abrir();
+}
+///////////////////NIVEL3 SUBE////////////////////////
+            if((N1==0)&&(N2==0)&&(NX==3)&&(N4==0)&&(N5==5))
+            {
+            N1=0;
+            N2=0;
+            N3=0;
+            N4=0;
+            N5=0;
+            N6=0;
+            N7=0;
+            N8=0;
+            N9=0;
+            N10=1;
+            NX=5;
+            NUM=0;
+            TOTAL=1;
+            INDICE=0;
+              for (int i = 0; i<=2; i++)
+              {
+                CLAVE[i]=0;
+              }
+Arriba();
+delay(100);
+Arriba();
+delay(100);            
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 5");
+  display.display();
+  Abrir();
+              }
+if((N1==0)&&(N2==0)&&(NX==3)&&(N4==4)&&(N5==0))
+  {
+    N1=0;
+    N2=0;
+    N3=0;
+    N4=0;
+    N5=0;
+    N6=0;
+    N7=0;
+    N8=0;
+    N9=0;
+    N10=1;
+    NX=4;
+    NUM=0;
+    TOTAL=1;
+    INDICE=0;
+    for (int i = 0; i<=2; i++)
+    {
+    CLAVE[i]=0;
+    }
+Arriba();
+delay(100);             
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 4");
+  display.display();
+  Abrir();
+}
+//////////////////////////NIVEL 4 SUBE/////////////////////
+            if((N1==0)&&(N2==0)&&(N3==0)&&(NX==4)&&(N5==5))
+            {
+            N1=0;
+            N2=0;
+            N3=0;
+            N4=0;
+            N5=0;
+            N6=0;
+            N7=0;
+            N8=0;
+            N9=0;
+            N10=1;
+            NX=5;
+            NUM=0;
+            TOTAL=1;
+            INDICE=0;
+              for (int i = 0; i<=2; i++)
+              {
+                CLAVE[i]=0;
+              }
+Arriba();
+delay(100);             
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 5");
+  display.display();
+  Abrir();
+              }
+////////////////////////NIVEL 5 BAJA/////////////////////////////
+if((N1==0)&&(N2==0)&&(N3==3)&&(N4==4)&&(NX==5))
+  {
+    N1=0;
+    N2=0;
+    N3=0;
+    N4=0;
+    N5=0;
+    N6=0;
+    N7=0;
+    N8=0;
+    N9=0;
+    N10=1;
+    NX=3;
+    NUM=0;
+    TOTAL=1;
+    INDICE=0;
+    for (int i = 0; i<=2; i++)
+    {
+    CLAVE[i]=0;
+    }
+Bajar();
+delay(100);            
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 4");
+  display.display();
+Abrir();
+delay(100);
+Cerrar();
+delay(100);
+Bajar();
+delay(100);             
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 3");
+  display.display();
+Abrir();
+delay(100); 
+}             
+            if((N1==0)&&(N2==2)&&(N3==3)&&(N4==0)&&(NX==5))
+            {
+            N1=0;
+            N2=0;
+            N3=0;
+            N4=0;
+            N5=0;
+            N6=0;
+            N7=0;
+            N8=0;
+            N9=0;
+            N10=1;
+            NX=2;
+            NUM=0;
+            TOTAL=1;
+            INDICE=0;
+              for (int i = 0; i<=2; i++)
+              {
+                CLAVE[i]=0;
+              }
+Bajar();
+delay(100);
+Bajar();
+delay(100);
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 3");
+  display.display();
+Abrir();
+delay(100);
+Cerrar();
+delay(100);
+Bajar();
+delay(100);            
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 2");
+  display.display();
+Abrir();
+delay(100);
+              }
+if((N1==1)&&(N2==2)&&(N3==0)&&(N4==0)&&(NX==5))
+  {
+    N1=0;
+    N2=0;
+    N3=0;
+    N4=0;
+    N5=0;
+    N6=0;
+    N7=0;
+    N8=0;
+    N9=0;
+    N10=1;
+    NX=1;
+    NUM=0;
+    TOTAL=1;
+    INDICE=0;
+    for (int i = 0; i<=2; i++)
+    {
+    CLAVE[i]=0;
+    }
+Bajar();
+delay(100);
+Bajar();
+delay(100);
+Bajar();
+delay(100);           
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 2");
+  display.display();
+Abrir();
+delay(100);
+Cerrar();
+delay(100);
+Bajar();
+delay(100);             
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 1");
+  display.display();
+Abrir();
+delay(100);
+}             
+            if((N1==0)&&(N2==2)&&(N3==0)&&(N4==4)&&(NX==5))
+            {
+            N1=0;
+            N2=0;
+            N3=0;
+            N4=0;
+            N5=0;
+            N6=0;
+            N7=0;
+            N8=0;
+            N9=0;
+            N10=1;
+            NX=2;
+            NUM=0;
+            TOTAL=1;
+            INDICE=0;
+              for (int i = 0; i<=2; i++)
+              {
+                CLAVE[i]=0;
+              }
+Bajar();
+delay(100);            
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 4");
+  display.display();
+Abrir();
+delay(100);
+Cerrar();
+delay(100);
+Bajar();
+delay(100);
+Bajar();
+delay(100);             
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 2");
+  display.display();
+Abrir();
+delay(100);
+              }
+if((N1==1)&&(N2==0)&&(N3==0)&&(N4==4)&&(NX==5))
+  {
+    N1=0;
+    N2=0;
+    N3=0;
+    N4=0;
+    N5=0;
+    N6=0;
+    N7=0;
+    N8=0;
+    N9=0;
+    N10=1;
+    NX=1;
+    NUM=0;
+    TOTAL=1;
+    INDICE=0;
+    for (int i = 0; i<=2; i++)
+    {
+    CLAVE[i]=0;
+    }
+Bajar();
+delay(100);             
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 4");
+  display.display();
+Abrir();
+delay(100);
+Cerrar();
+delay(100);
+Bajar();
+delay(100);
+Bajar();
+delay(100);
+Bajar();
+delay(100);             
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 1");
+  display.display();
+Abrir();
+delay(100);
+}             
+            if((N1==1)&&(N2==0)&&(N3==3)&&(N4==0)&&(NX==5))
+            {
+            N1=0;
+            N2=0;
+            N3=0;
+            N4=0;
+            N5=0;
+            N6=0;
+            N7=0;
+            N8=0;
+            N9=0;
+            N10=1;
+            NX=1;
+            NUM=0;
+            TOTAL=1;
+            INDICE=0;
+              for (int i = 0; i<=2; i++)
+              {
+                CLAVE[i]=0;
+              }
+Bajar();
+delay(100);
+Bajar();
+delay(100);           
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 3");
+  display.display();
+Abrir();
+delay(100);
+Cerrar();
+delay(100);
+Bajar();
+delay(100);
+Bajar();
+delay(100);            
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 1");
+  display.display();
+Abrir();
+delay(100);
+              }
+////////////////////////NIVEL 4 BAJA/////////////////////////////
+if((N1==0)&&(N2==2)&&(N3==3)&&(NX==4)&&(N5==0))
+  {
+    N1=0;
+    N2=0;
+    N3=0;
+    N4=0;
+    N5=0;
+    N6=0;
+    N7=0;
+    N8=0;
+    N9=0;
+    N10=1;
+    NX=2;
+    NUM=0;
+    TOTAL=1;
+    INDICE=0;
+    for (int i = 0; i<=2; i++)
+    {
+    CLAVE[i]=0;
+    }
+Bajar();
+delay(100);          
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 3");
+  display.display();
+Abrir();
+delay(100);
+Cerrar();
+delay(100);
+Bajar();
+delay(100);            
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 2");
+  display.display();
+Abrir();
+delay(100);   
+}             
+            if((N1==1)&&(N2==2)&&(N3==0)&&(NX==4)&&(N5==0))
+            {
+            N1=0;
+            N2=0;
+            N3=0;
+            N4=0;
+            N5=0;
+            N6=0;
+            N7=0;
+            N8=0;
+            N9=0;
+            N10=1;
+            NX=1;
+            NUM=0;
+            TOTAL=1;
+            INDICE=0;
+              for (int i = 0; i<=2; i++)
+              {
+                CLAVE[i]=0;
+              }
+Bajar();
+delay(100);
+Bajar();
+delay(100);
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 2");
+  display.display();
+Abrir();
+delay(100);
+Cerrar();
+delay(100);
+Bajar();
+delay(100);            
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 1");
+  display.display();
+Abrir();
+delay(100);
+              }
+if((N1==1)&&(N2==0)&&(N3==3)&&(NX==4)&&(N5==0))
+  {
+    N1=0;
+    N2=0;
+    N3=0;
+    N4=0;
+    N5=0;
+    N6=0;
+    N7=0;
+    N8=0;
+    N9=0;
+    N10=1;
+    NX=1;
+    NUM=0;
+    TOTAL=1;
+    INDICE=0;
+    for (int i = 0; i<=2; i++)
+    {
+    CLAVE[i]=0;
+    }
+Bajar();
+delay(100);            
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 3");
+  display.display();
+Abrir();
+delay(100);
+Cerrar();
+delay(100);
+Bajar();
+delay(100);
+Bajar();
+delay(100);             
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 1");
+  display.display();
+Abrir();
+delay(100);
+}
+///////////////////////////////////NIVEL3 ABAJO////////////
+if((N1==1)&&(N2==2)&&(NX==3)&&(N4==0)&&(N5==0))
+  {
+    N1=0;
+    N2=0;
+    N3=0;
+    N4=0;
+    N5=0;
+    N6=0;
+    N7=0;
+    N8=0;
+    N9=0;
+    N10=1;
+    NX=1;
+    NUM=0;
+    TOTAL=1;
+    INDICE=0;
+    for (int i = 0; i<=2; i++)
+    {
+    CLAVE[i]=0;
+    }
+Bajar();
+delay(100);             
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 2");
+  display.display();
+Abrir();
+delay(100);
+Cerrar();
+delay(100);
+Bajar();
+delay(100);            
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 1");
+  display.display();
+Abrir();
+delay(100);
+}
+////////////////////////////////NIVEL 5 ABAJO//////////////
+if((N1==0)&&(N2==2)&&(N3==3)&&(N4==4)&&(NX==5))
+  {
+    N1=0;
+    N2=0;
+    N3=0;
+    N4=0;
+    N5=0;
+    N6=0;
+    N7=0;
+    N8=0;
+    N9=0;
+    N10=1;
+    NX=2;
+    NUM=0;
+    TOTAL=1;
+    INDICE=0;
+    for (int i = 0; i<=2; i++)
+    {
+    CLAVE[i]=0;
+    }
+Bajar();
+delay(100);             
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 4");
+  display.display();
+Abrir();
+delay(100);
+Cerrar();
+delay(100);
+    (180);              
+Bajar();
+delay(100);              
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 3");
+  display.display();
+Abrir();
+delay(100);
+Cerrar();
+delay(100);   
+Bajar();
+delay(100);             
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 2");
+  display.display();
+Abrir();
+delay(100);
+}             
+            if((N1==1)&&(N2==2)&&(N3==3)&&(N4==0)&&(NX==5))
+            {
+            N1=0;
+            N2=0;
+            N3=0;
+            N4=0;
+            N5=0;
+            N6=0;
+            N7=0;
+            N8=0;
+            N9=0;
+            N10=1;
+            NX=1;
+            NUM=0;
+            TOTAL=1;
+            INDICE=0;
+              for (int i = 0; i<=2; i++)
+              {
+                CLAVE[i]=0;
+              }
+Bajar();
+delay(100);
+Bajar();
+delay(100);            
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 3");
+  display.display();
+Abrir();
+delay(100);
+Cerrar();
+delay(100);
+Bajar();
+delay(100);            
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 2");
+  display.display();
+Abrir();
+delay(100);
+Cerrar();
+delay(100);
+Bajar();
+delay(100);           
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 1");
+  display.display();
+Abrir();
+delay(100);               
+              }
+if((N1==1)&&(N2==2)&&(N3==0)&&(N4==4)&&(NX==5))
+  {
+    N1=0;
+    N2=0;
+    N3=0;
+    N4=0;
+    N5=0;
+    N6=0;
+    N7=0;
+    N8=0;
+    N9=0;
+    N10=1;
+    NX=1;
+    NUM=0;
+    TOTAL=1;
+    INDICE=0;
+    for (int i = 0; i<=2; i++)
+    {
+    CLAVE[i]=0;
+    }
+Bajar();
+delay(100);             
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 4");
+  display.display();
+Abrir();
+delay(100);
+Cerrar();
+delay(100);
+Bajar();
+delay(100);
+Bajar();
+delay(100);            
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 2");
+  display.display();
+Abrir();
+delay(100);
+Cerrar();
+delay(100);
+Bajar();
+delay(100);            
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 1");
+  display.display();
+Abrir();
+delay(100);
+}
+            if((N1==1)&&(N2==0)&&(N3==3)&&(N4==4)&&(NX==5))
+            {
+            N1=0;
+            N2=0;
+            N3=0;
+            N4=0;
+            N5=0;
+            N6=0;
+            N7=0;
+            N8=0;
+            N9=0;
+            N10=1;
+            NX=1;
+            NUM=0;
+            TOTAL=1;
+            INDICE=0;
+              for (int i = 0; i<=2; i++)
+              {
+                CLAVE[i]=0;
+              }
+Bajar();
+delay(100);            
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 4");
+  display.display();
+Abrir();
+delay(100);
+Cerrar();
+delay(100);
+Bajar();
+delay(100);             
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 3");
+  display.display();
+Abrir();
+delay(100);
+Cerrar();
+delay(100);
+Bajar();
+delay(100);
+Bajar();
+delay(100);            
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 1");
+  display.display();
+Abrir();
+delay(100);             
+              }
+////////////////////////////////NIVEL 4 ABAJO//////////////
+if((N1==1)&&(N2==2)&&(N3==3)&&(NX==4)&&(N5==0))
+  {
+    N1=0;
+    N2=0;
+    N3=0;
+    N4=0;
+    N5=0;
+    N6=0;
+    N7=0;
+    N8=0;
+    N9=0;
+    N10=1;
+    NX=1;
+    NUM=0;
+    TOTAL=1;
+    INDICE=0;
+    for (int i = 0; i<=2; i++)
+    {
+    CLAVE[i]=0;
+    }
+Bajar();
+delay(100);             
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 3");
+  display.display();
+Abrir();
+delay(100);
+Cerrar();
+delay(100);
+Bajar();
+delay(100);            
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 2");
+  display.display();
+Abrir();
+delay(100);
+Cerrar();
+delay(100);   
+Bajar();
+delay(100);            
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 1");
+  display.display();
+Abrir();
+delay(100);
+}
+////////////////////////////////////NIVEL 1 SUBIR///////////
+///////////////////////////////////////////////////
+if((NX==1)&&(N2==2)&&(N3==3)&&(N4==0)&&(N5==0))
+  {
+    N1=0;
+    N2=0;
+    N3=0;
+    N4=0;
+    N5=0;
+    N6=0;
+    N7=0;
+    N8=0;
+    N9=0;
+    N10=1;
+    NX=3;
+    NUM=0;
+    TOTAL=1;
+    INDICE=0;
+    for (int i = 0; i<=2; i++)
+    {
+    CLAVE[i]=0;
+    }
+Arriba();
+delay(100);            
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 2");
+  display.display();
+Abrir();
+delay(100);
+Cerrar();
+delay(100);
+Arriba();
+delay(100);            
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 3");
+  display.display();
+Abrir();
+delay(100);   
+}             
+            if((NX==1)&&(N2==0)&&(N3==3)&&(N4==4)&&(N5==0))
+            {
+            N1=0;
+            N2=0;
+            N3=0;
+            N4=0;
+            N5=0;
+            N6=0;
+            N7=0;
+            N8=0;
+            N9=0;
+            N10=1;
+            NX=4;
+            NUM=0;
+            TOTAL=1;
+            INDICE=0;
+              for (int i = 0; i<=2; i++)
+              {
+                CLAVE[i]=0;
+              }
+Arriba();
+delay(100);
+Arriba();
+delay(100);             
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 3");
+  display.display();
+Abrir();
+delay(100);
+Cerrar();
+delay(100);
+Arriba();
+delay(100);             
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 4");
+  display.display();
+Abrir();
+delay(100);
+              }
+if((NX==1)&&(N2==0)&&(N3==0)&&(N4==4)&&(N5==5))
+  {
+    N1=0;
+    N2=0;
+    N3=0;
+    N4=0;
+    N5=0;
+    N6=0;
+    N7=0;
+    N8=0;
+    N9=0;
+    N10=1;
+    NX=5;
+    NUM=0;
+    TOTAL=1;
+    INDICE=0;
+    for (int i = 0; i<=2; i++)
+    {
+    CLAVE[i]=0;
+    }
+Arriba();
+delay(100);  
+Arriba();
+delay(100);  
+Arriba();
+delay(100);              
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 4");
+  display.display();
+Abrir();
+delay(100);
+Cerrar();
+delay(100);
+Arriba();
+delay(100);             
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 5");
+  display.display();
+Abrir();
+delay(100);
+}             
+            if((NX==1)&&(N2==2)&&(N3==0)&&(N4==4)&&(N5==0))
+            {
+            N1=0;
+            N2=0;
+            N3=0;
+            N4=0;
+            N5=0;
+            N6=0;
+            N7=0;
+            N8=0;
+            N9=0;
+            N10=1;
+            NX=4;
+            NUM=0;
+            TOTAL=1;
+            INDICE=0;
+              for (int i = 0; i<=2; i++)
+              {
+                CLAVE[i]=0;
+              }
+Arriba();
+delay(100);             
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 2");
+  display.display();
+Abrir();
+delay(100);
+Cerrar();
+delay(100);
+Arriba();
+delay(100);
+Arriba();
+delay(100);             
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 4");
+  display.display();
+Abrir();
+delay(100);
+              }
+if((NX==1)&&(N2==0)&&(N3==3)&&(N4==0)&&(N5==5))
+  {
+    N1=0;
+    N2=0;
+    N3=0;
+    N4=0;
+    N5=0;
+    N6=0;
+    N7=0;
+    N8=0;
+    N9=0;
+    N10=1;
+    NX=5;
+    NUM=0;
+    TOTAL=1;
+    INDICE=0;
+    for (int i = 0; i<=2; i++)
+    {
+    CLAVE[i]=0;
+    }
+Arriba();
+delay(100);
+Arriba();
+delay(100);             
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 3");
+  display.display();
+Abrir();
+delay(100);
+Cerrar();
+delay(100);
+Arriba();
+delay(100);
+Arriba();
+delay(100);            
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 5");
+  display.display();
+Abrir();
+delay(100);
+}             
+            if((NX==1)&&(N2==2)&&(N3==0)&&(N4==0)&&(N5==5))
+            {
+            N1=0;
+            N2=0;
+            N3=0;
+            N4=0;
+            N5=0;
+            N6=0;
+            N7=0;
+            N8=0;
+            N9=0;
+            N10=1;
+            NX=5;
+            NUM=0;
+            TOTAL=1;
+            INDICE=0;
+              for (int i = 0; i<=2; i++)
+              {
+                CLAVE[i]=0;
+              }
+Arriba();
+delay(100);      
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 2");
+  display.display();
+Abrir();
+delay(100);
+Cerrar();
+delay(100);
+Arriba();
+delay(100);
+Arriba();
+delay(100);
+Arriba();
+delay(100);            
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 5");
+  display.display();
+Abrir();
+delay(100);
+              }
+////////////////////////NIVEL 2 SUBE/////////////////////////////
+if((N1==0)&&(NX==2)&&(N3==3)&&(N4==4)&&(N5==0))
+  {
+    N1=0;
+    N2=0;
+    N3=0;
+    N4=0;
+    N5=0;
+    N6=0;
+    N7=0;
+    N8=0;
+    N9=0;
+    N10=1;
+    NX=4;
+    NUM=0;
+    TOTAL=1;
+    INDICE=0;
+    for (int i = 0; i<=2; i++)
+    {
+    CLAVE[i]=0;
+    }
+Arriba();
+delay(100);
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 3");
+  display.display();
+Abrir();
+delay(100);
+Cerrar();
+delay(100);
+Arriba();
+delay(100);            
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 4");
+  display.display();
+Abrir();
+delay(100);   
+}             
+            if((N1==0)&&(NX==2)&&(N3==0)&&(N4==4)&&(N5==5))
+            {
+            N1=0;
+            N2=0;
+            N3=0;
+            N4=0;
+            N5=0;
+            N6=0;
+            N7=0;
+            N8=0;
+            N9=0;
+            N10=1;
+            NX=5;
+            NUM=0;
+            TOTAL=1;
+            INDICE=0;
+              for (int i = 0; i<=2; i++)
+              {
+                CLAVE[i]=0;
+              }
+Arriba();
+delay(100);
+Arriba();
+delay(100);            
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 4");
+  display.display();
+Abrir();
+delay(100);
+Cerrar();
+delay(100);            
+Arriba();
+delay(100);             
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 5");
+  display.display();
+Abrir();
+delay(100);
+              }
+if((N1==0)&&(NX==2)&&(N3==3)&&(N4==0)&&(N5==5))
+  {
+    N1=0;
+    N2=0;
+    N3=0;
+    N4=0;
+    N5=0;
+    N6=0;
+    N7=0;
+    N8=0;
+    N9=0;
+    N10=1;
+    NX=5;
+    NUM=0;
+    TOTAL=1;
+    INDICE=0;
+    for (int i = 0; i<=2; i++)
+    {
+    CLAVE[i]=0;
+    }
+Arriba();
+delay(100);            
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 3");
+  display.display();
+Abrir();
+delay(100);
+Cerrar();
+delay(100);
+Arriba();
+delay(100);
+Arriba();
+delay(100);             
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 5");
+  display.display();
+Abrir();
+delay(100);
+}
+///////////////////////////////////NIVEL3 SUBE////////////
+if((N1==0)&&(N2==0)&&(NX==3)&&(N4==4)&&(N5==5))
+  {
+    N1=0;
+    N2=0;
+    N3=0;
+    N4=0;
+    N5=0;
+    N6=0;
+    N7=0;
+    N8=0;
+    N9=0;
+    N10=1;
+    NX=5;
+    NUM=0;
+    TOTAL=1;
+    INDICE=0;
+    for (int i = 0; i<=2; i++)
+    {
+    CLAVE[i]=0;
+    }
+Arriba();
+delay(100);             
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 4");
+  display.display();
+Abrir();
+delay(100);
+Cerrar();
+delay(100);
+Arriba();
+delay(100);             
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 5");
+  display.display();
+Abrir();
+delay(100);    
+}
+////////////////////////////////NIVEL 1 SUBE//////////////
+if((NX==1)&&(N2==2)&&(N3==3)&&(N4==4)&&(N5==0))
+  {
+    N1=0;
+    N2=0;
+    N3=0;
+    N4=0;
+    N5=0;
+    N6=0;
+    N7=0;
+    N8=0;
+    N9=0;
+    N10=1;
+    NX=5;
+    NUM=0;
+    TOTAL=1;
+    INDICE=0;
+    for (int i = 0; i<=2; i++)
+    {
+    CLAVE[i]=0;
+    }
+Arriba();
+delay(100);           
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 2");
+  display.display();
+Abrir();
+delay(100);
+Cerrar();
+delay(100);
+Arriba();
+delay(100);            
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 3");
+  display.display();
+Abrir();
+delay(100);
+Cerrar();
+delay(100);
+Arriba();
+delay(100);         
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 4");
+  display.display();
+Abrir();
+delay(100);
+}             
+            if((NX==1)&&(N2==0)&&(N3==3)&&(N4==4)&&(N5==5))
+            {
+            N1=0;
+            N2=0;
+            N3=0;
+            N4=0;
+            N5=0;
+            N6=0;
+            N7=0;
+            N8=0;
+            N9=0;
+            N10=1;
+            NX=1;
+            NUM=0;
+            TOTAL=1;
+            INDICE=0;
+              for (int i = 0; i<=2; i++)
+              {
+                CLAVE[i]=0;
+              }
+Arriba();
+delay(100);
+Arriba();
+delay(100);             
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 3");
+  display.display();
+Abrir();
+delay(100);
+Cerrar();
+delay(100);
+Arriba();
+delay(100);             
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 4");
+  display.display();
+Abrir();
+delay(100);
+Cerrar();
+delay(100);
+Arriba();
+delay(100);          
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 5");
+  display.display();
+Abrir();
+delay(100);               
+              }
+if((NX==1)&&(N2==2)&&(N3==0)&&(N4==4)&&(N5==5))
+  {
+    N1=0;
+    N2=0;
+    N3=0;
+    N4=0;
+    N5=0;
+    N6=0;
+    N7=0;
+    N8=0;
+    N9=0;
+    N10=1;
+    NX=5;
+    NUM=0;
+    TOTAL=1;
+    INDICE=0;
+    for (int i = 0; i<=2; i++)
+    {
+    CLAVE[i]=0;
+    }
+Arriba();
+delay(100);            
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 2");
+  display.display();
+Abrir();
+delay(100);
+Cerrar();
+delay(100);
+Arriba();
+delay(100);
+Arriba();
+delay(100);           
+    delay(1500);             
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 4");
+  display.display();
+Abrir();
+delay(100);
+Cerrar();
+delay(100);
+Arriba();
+delay(100);          
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 5");
+  display.display();
+Abrir();
+delay(100);
+}
+            if((NX==1)&&(N2==2)&&(N3==3)&&(N4==0)&&(N5==5))
+            {
+            N1=0;
+            N2=0;
+            N3=0;
+            N4=0;
+            N5=0;
+            N6=0;
+            N7=0;
+            N8=0;
+            N9=0;
+            N10=1;
+            NX=5;
+            NUM=0;
+            TOTAL=1;
+            INDICE=0;
+              for (int i = 0; i<=2; i++)
+              {
+                CLAVE[i]=0;
+              }
+Arriba();
+delay(100);            
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 2");
+  display.display();
+Abrir();
+delay(100);
+Cerrar();
+delay(100);
+Arriba();
+delay(100);           
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 3");
+  display.display();
+Abrir();
+delay(100);
+Cerrar();
+delay(100);
+Arriba();
+delay(100);             
+Arriba();
+delay(100);
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 5");
+  display.display();
+Abrir();
+delay(100);              
+              }
+////////////////////////////////NIVEL 2 SUBE//////////////
+if((N1==0)&&(NX==2)&&(N3==3)&&(N4==4)&&(N5==5))
+  {
+    N1=0;
+    N2=0;
+    N3=0;
+    N4=0;
+    N5=0;
+    N6=0;
+    N7=0;
+    N8=0;
+    N9=0;
+    N10=1;
+    NX=5;
+    NUM=0;
+    TOTAL=1;
+    INDICE=0;
+    for (int i = 0; i<=2; i++)
+    {
+    CLAVE[i]=0;
+    }
+Abrir();
+delay(100);           
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 3");
+  display.display();
+Abrir();
+delay(100);
+Cerrar();
+delay(100);
+Abrir();
+delay(100);             
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 4");
+  display.display();
+Abrir();
+delay(100);
+Cerrar();
+delay(100);   
+Abrir();
+delay(100);             
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 5");
+  display.display();
+Abrir();
+delay(100);
+}
+///////////////////NIVEL 1 SUBE///////////////////////
+if((NX==1)&&(N2==2)&&(N3==3)&&(N4==4)&&(N5==5))
+  {
+    N1=0;
+    N2=0;
+    N3=0;
+    N4=0;
+    N5=0;
+    N6=0;
+    N7=0;
+    N8=0;
+    N9=0;
+    N10=1;
+    NX=5;
+    NUM=0;
+    TOTAL=1;
+    INDICE=0;
+    for (int i = 0; i<=2; i++)
+    {
+    CLAVE[i]=0;
+    }
+Arriba();
+delay(100);            
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 2");
+  display.display();
+Abrir();
+delay(100);
+Cerrar();
+delay(100);
+Arriba();
+delay(100);             
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 3");
+  display.display();
+Abrir();
+delay(100);
+Cerrar();
+delay(100);
+Arriba();
+delay(100);             
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 4");
+  display.display();
+Abrir();
+delay(100);
+Cerrar();
+delay(100);
+Arriba();
+delay(100);             
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 5");
+  display.display();
+Abrir();
+delay(100);
+}                     
+///////////////////NIVEL 5 BAJA///////////////////////
+if((N1==1)&&(N2==2)&&(N3==3)&&(N4==4)&&(NX==5))
+  {
+    N1=0;
+    N2=0;
+    N3=0;
+    N4=0;
+    N5=0;
+    N6=0;
+    N7=0;
+    N8=0;
+    N9=0;
+    N10=1;
+    NX=1;
+    NUM=0;
+    TOTAL=1;
+    INDICE=0;
+    for (int i = 0; i<=2; i++)
+    {
+    CLAVE[i]=0;
+    }
+Bajar();
+delay(100);            
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 4");
+  display.display();
+Abrir();
+delay(100);
+Cerrar();
+delay(100);
+Bajar();
+delay(100);             
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 3");
+  display.display();
+Abrir();
+delay(100);
+Cerrar();
+delay(100);
+Bajar();
+delay(100);             
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 2");
+  display.display();
+Abrir();
+delay(100);
+Cerrar();
+delay(100);
+Bajar();
+delay(100);           
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(2,1);
+  display.println("NIVEL 1");
+  display.display();
+Abrir();
+delay(100);
+}                     
+display.clearDisplay();
+}
+}
+
+void Bajar(){
+                servo.write(180);
+                servo.attach(10);
+                delay(3000);
+                servo.detach();
+                return;
+  Bajar();
+}
+void Arriba(){
+                servo.write(0);
+                servo.attach(10);
+                delay(5200);
+                servo.detach();
+                return;
+  Arriba();
+}
+
+
+void Abrir(){
+  analogWrite(Motor1,0);
+  analogWrite(Motor2,255);
+  delay(3200);
+  analogWrite(Motor2,0);
+  delay(2000);
+  return;
+Abrir();
+}
+void Cerrar(){
+  analogWrite(Motor1,255);
+  analogWrite(Motor2,0);
+  delay(3200);
+  analogWrite(Motor1,0);
+  return;
+Cerrar();
+}
